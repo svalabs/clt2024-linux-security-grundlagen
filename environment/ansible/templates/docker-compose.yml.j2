@@ -1,0 +1,21 @@
+version: "3"
+services:
+  openvas:
+    image: 'immauss/openvas:21.04.09'
+    restart: always
+    ports:
+      - "443:9392"
+    environment:
+      - "PASSWORD={{ openvas_password }}"
+      - "USERNAME={{ openvas_user }}"
+      - "REDISDBS=512"
+      - "QUIET=false"
+      - "NEWDB=false"
+      - "SKIPSYNC=false"
+      - "RESTORE=false"
+      - "DEBUG=false"
+      - "HTTPS=true"
+      - "GMP=false"
+    volumes:
+      - "./data:/data:z"
+    container_name: openvas

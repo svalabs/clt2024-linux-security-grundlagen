@@ -1,0 +1,28 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: user
+    pass: 'SVA2024-SCgLKzeyj9v4maXsxqJuWD'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_selinux_state:
+    command: getenforce
+    stdout:
+      contains:
+        - Enforcing
+    exit-code: 0
+
+  check_selinux_configuration:
+    command: cat /etc/sysconfig/selinux
+    stdout:
+      contains:
+        - SELINUX=enforcing
+        - SELINUXTYPE=targeted
+    exit-code: 0

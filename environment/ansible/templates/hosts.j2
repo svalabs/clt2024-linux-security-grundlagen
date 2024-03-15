@@ -1,0 +1,9 @@
+127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4
+::1         localhost localhost.localdomain localhost6 localhost6.localdomain6
+
+127.0.0.1 FQDN {{ ansible_hostname }}.localdomain
+
+{% set prefix = ansible_hostname.split('-') %}
+192.168.56.10 {{ prefix[0] }}-controller.sva.de {{ prefix[0] }}-controller controller
+192.168.56.20 {{ prefix[0] }}-node1.sva.de {{ prefix[0] }}-node1 node1
+192.168.56.30 {{ prefix[0] }}-node2.sva.de {{ prefix[0] }}-node2 node2

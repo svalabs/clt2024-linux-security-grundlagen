@@ -1,0 +1,27 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_apache_documentroot:
+    command: grep Listen /etc/httpd/conf/httpd.conf
+    stdout:
+      contains:
+        - 'Listen 1337'
+    exit-code: 0
+
+  check_apache_state:
+    command: systemctl status httpd
+    stdout:
+      contains:
+        - 'active (running)'
+    exit-code: 0

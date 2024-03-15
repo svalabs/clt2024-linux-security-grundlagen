@@ -1,0 +1,35 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_tilde_removed:
+    command: rpm -qa
+    stdout:
+      not-contains:
+        - 'libt3config'
+        - 'libt3highlight'
+        - 'libt3key'
+        - 'libt3widget'
+        - 'libt3window'
+        - 'libtranscript1'
+        - 'tilde'
+    exit-code: 0
+
+  check_unnecessary_packages:
+    command: rpm -qa
+    stdout:
+      not-contains:
+        - 'telnet'
+        - 'cowsay'
+        - 'figlet'
+    exit-code: 0

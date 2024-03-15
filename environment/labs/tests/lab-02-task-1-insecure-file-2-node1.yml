@@ -1,0 +1,21 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_file_2:
+    command: ls -l /usr/bin/notarootshell
+    stdout:
+      contains:
+        - '-rwxrwxr-x'
+        - 'root root'
+    exit-code: 0

@@ -1,0 +1,17 @@
+---
+nodes:
+  node2:
+    type: ssh
+    addr: node2:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node2
+
+tests:
+  check_sus_application:
+    command: /usr/local/bin/sus
+    exit-code: 0

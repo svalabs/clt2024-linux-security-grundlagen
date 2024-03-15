@@ -1,0 +1,12 @@
+---
+name: mycompany-baseline
+title: MyCompany Security Baseline
+maintainer: Paula Pinkepank
+copyright: MyCompany LTD
+copyright_email: ppinkepank@example.com
+license: Apache-2.0
+summary: Test suite for best practice MyCompany hardening
+inspec_version: '>= 4.6.3'
+version: 1.0.0
+supports:
+  - os-family: linux

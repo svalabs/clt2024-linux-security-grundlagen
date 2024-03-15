@@ -1,0 +1,21 @@
+---
+nodes:
+  node2:
+    type: ssh
+    addr: node2:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node2
+
+tests:
+  check_aide_command:
+    command: aide --version
+    stderr:
+      contains:
+        - 'Aide'
+        - 'Compiled with the following options'
+    exit-code: 0

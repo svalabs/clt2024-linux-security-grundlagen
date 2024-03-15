@@ -1,0 +1,28 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_package:
+    command: rpm -qa
+    stdout:
+      contains:
+        - 'mod_security'
+    exit-code: 0
+
+  check_configuration:
+    command: cat /etc/httpd/conf.d/serversignature.conf
+    stdout:
+      contains:
+        - 'ServerTokens Full'
+        - 'SecServerSignature "Pinkepank Server (13.37-foobar)"'
+    exit-code: 0

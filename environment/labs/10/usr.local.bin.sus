@@ -1,0 +1,13 @@
+#include <tunables/global>
+
+/usr/local/bin/sus {
+  #include <abstractions/base>
+  #include <abstractions/python>
+
+  /home/*/.bashrc r,
+  /usr/bin/env ix,
+  /usr/bin/python3.8 mrix,
+  /usr/local/bin/sus r,
+  owner /etc/profile r,
+
+}

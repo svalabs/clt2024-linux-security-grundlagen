@@ -1,0 +1,21 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_aide_state:
+    command: cat /var/log/aide/aide.log
+    stdout:
+      contains:
+        - 'f++++++++++++++++: /usr/bin/hackertool'
+        - 'f++++++++++++++++: /usr/lib64/libsus.so.6'
+    exit-code: 0

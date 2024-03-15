@@ -1,0 +1,8 @@
+---
+tests:
+  check_servertokens:
+    command: curl -I http://node1
+    stdout:
+      contains:
+        - 'Pinkepank Server (13.37-foobar)'
+    exit-code: 0

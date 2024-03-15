@@ -1,0 +1,24 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_selinux_booleans:
+    command: getsebool -a
+    exit-code: 0
+
+  check_selinux_boolean_setting:
+    command: getsebool httpd_can_network_connect
+    stdout:
+      contains:
+        - '--> on'
+    exit-code: 0

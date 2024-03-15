@@ -1,0 +1,21 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_file_1:
+    command: ls -l /var/www/html/web-passwords
+    stdout:
+      contains:
+        - '-rw-rw----'
+        - 'root root'
+    exit-code: 0

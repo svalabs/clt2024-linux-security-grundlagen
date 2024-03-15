@@ -1,0 +1,30 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_jail_configuration:
+    command: cat /etc/fail2ban/jail.d/10-sshd.conf
+    stdout:
+      contains:
+        - enabled = true
+        - bantime = 1h
+        - maxretry = 3
+    exit-code: 0
+
+  check_jail_configuration_permissions:
+    command: ls -l /etc/fail2ban/jail.d/10-sshd.conf
+    stdout:
+      contains:
+        - 'root root'
+        - '-rw-r--r--'
+    exit-code: 0

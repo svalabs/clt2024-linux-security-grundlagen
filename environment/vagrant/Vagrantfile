@@ -1,0 +1,100 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+Vagrant.configure("2") do |config|
+
+  # box names and versions
+  box_name_el = "generic/rocky8"
+  box_version_el = "~> 4.3"
+  box_name_ubuntu = "generic/ubuntu2204"
+  box_version_ubuntu = "~> 4.3"
+
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.qemu_use_session = false
+    # if the above doesn't work, try uncommenting the following instead
+    #libvirt.uri = 'qemu:///system'
+  end
+
+  # deploy controller VM
+  config.vm.define "controller" do |controller|
+    controller.vm.hostname = "0-controller.sva.de"
+    # define box
+    controller.vm.box = box_name_el
+    controller.vm.box_version = box_version_el
+    # rsync
+    config.vm.synced_folder "../", "/vagrant", type: "rsync"
+    # define additional private network
+    controller.vm.network "private_network", ip: "192.168.56.10"
+    # CPU/memory
+    controller.vm.provider :libvirt do |libvirt|
+      libvirt.cpus = "2"
+      libvirt.memory = "4096"
+    end
+    controller.vm.provider "virtualbox" do |vb|
+      vb.cpus = "2"
+      vb.memory = "4096"
+    end
+    # prepare controller
+    controller.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "ansible/node.yml"
+      ansible.galaxy_role_file = '/vagrant/ansible/requirements.yml'
+      ansible.galaxy_roles_path = '/etc/ansible/roles'
+      ansible.galaxy_command = 'ansible-galaxy collection install -r %{role_file} ; sudo ansible-galaxy role install -r %{role_file} --roles-path=%{roles_path}'
+    end
+  end
+
+  # deploy node1 VM
+  config.vm.define "node1" do |node1|
+    node1.vm.hostname = "0-node1.sva.de"
+    # define box
+    node1.vm.box = box_name_el
+    node1.vm.box_version = box_version_el
+    # rsync
+    config.vm.synced_folder "../", "/vagrant", type: "rsync"
+    # define additional private network
+    node1.vm.network "private_network", ip: "192.168.56.20"
+    # CPU/memory
+    node1.vm.provider :libvirt do |libvirt|
+      libvirt.cpus = "2"
+      libvirt.memory = "4096"
+    end
+    config.vm.provider "virtualbox" do |vb|
+      vb.cpus = "2"
+      vb.memory = "2048"
+    end
+    # prepare node1
+    node1.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "ansible/node.yml"
+      ansible.galaxy_role_file = '/vagrant/ansible/requirements.yml'
+      ansible.galaxy_roles_path = '/etc/ansible/roles'
+      ansible.galaxy_command = 'ansible-galaxy collection install -r %{role_file} ; sudo ansible-galaxy role install -r %{role_file} --roles-path=%{roles_path}'
+    end
+  end
+
+  # deploy node2 VM
+  config.vm.define "node2" do |node2|
+    node2.vm.hostname = "0-node2.sva.de"
+    # define box
+    node2.vm.box = box_name_ubuntu
+    node2.vm.box_version = box_version_ubuntu
+    # rsync
+    config.vm.synced_folder "../", "/vagrant", type: "rsync"
+    # define additional private network
+    node2.vm.network "private_network", ip: "192.168.56.30"
+    # CPU/memory
+    node2.vm.provider :libvirt do |libvirt|
+      libvirt.cpus = "2"
+      libvirt.memory = "4096"
+    end
+    node2.vm.provider "virtualbox" do |vb|
+      vb.cpus = "2"
+      vb.memory = "2048"
+    end
+    # prepare node2
+    node2.vm.provision "ansible_local" do |ansible|
+      ansible.playbook = "ansible/node.yml"
+      ansible.galaxy_role_file = '/vagrant/ansible/requirements.yml'
+      ansible.galaxy_roles_path = '/etc/ansible/roles'
+      ansible.galaxy_command = 'ansible-galaxy collection install -r %{role_file} ; sudo ansible-galaxy role install -r %{role_file} --roles-path=%{roles_path}'
+    end
+  end
+end

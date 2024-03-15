@@ -1,0 +1,332 @@
+---
+- name: Prepare lab environment
+  hosts: all
+  become: true
+  handlers:
+    - name: Restart SSH daemon
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
+
+  pre_tasks:
+    - name: Load credentials
+      ansible.builtin.include_vars: credentials.yml
+
+    - name: Change root password
+      ansible.builtin.user:
+        name: root
+        password: "{{ root_password | password_hash('sha512') }}"
+
+    - name: Update /etc/hosts
+      ansible.builtin.template:
+        src: "templates/hosts.j2"
+        dest: /etc/hosts
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+      when: ansible_os_family | lower == 'debian'
+
+    - name: Enable EPEL repository
+      ansible.builtin.yum:
+        name: epel-release
+      when: ansible_os_family | lower == 'redhat'
+
+    - name: Install core utilities
+      ansible.builtin.package:
+        name:
+          - dos2unix
+          - vim
+          - acl
+          - htop
+          - fail2ban
+          - nano
+
+    - name: Install some unneeded applications
+      ansible.builtin.package:
+        name:
+          - cowsay
+          - figlet
+          - telnet
+
+    - name: Install core utilities (Red Hat)
+      ansible.builtin.yum:
+        name:
+          - policycoreutils
+          - policycoreutils-python-utils
+      when: ansible_os_family | lower == 'redhat'
+
+    - name: Enable firewalld
+      ansible.builtin.service:
+        name: firewalld
+        state: started
+        enabled: true
+      when: ansible_os_family | lower == 'redhat'
+
+    - name: Enable ufw
+      community.general.ufw:
+        state: enabled
+        rule: "{{ item.rule | default('allow') }}"
+        port: "{{ item.port }}"
+      loop:
+        - port: '22'
+      when: ansible_distribution | lower == 'ubuntu'
+
+  tasks:
+    - name: Configure SSH options
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      loop:
+        - regexp: '^PasswordAuthentication'
+          line: 'PasswordAuthentication yes'
+        - regexp: '^PermitRootLogin'
+          line: 'PermitRootLogin yes'
+      notify: Restart SSH daemon
+      tags: ssh
+
+    - name: Create user
+      ansible.builtin.user:
+        name: user
+        password: "{{ user_password | password_hash('sha512') }}"
+        update_password: on_create
+        shell: /bin/bash
+        generate_ssh_key: true
+
+    - name: Enable user to run sudo
+      ansible.builtin.lineinfile:
+        path: /etc/sudoers
+        line: 'user  ALL=(ALL)       NOPASSWD: ALL'
+
+  post_tasks:
+    - name: Create solutions directory
+      ansible.builtin.file:
+        path: /labs
+        state: directory
+        owner: root
+        group: root
+        mode: '0755'
+      tags:
+        - labs
+
+    - name: Copy solution files
+      ansible.posix.synchronize:
+        src: ../labs/
+        dest: /labs/
+      tags:
+        - labs
+
+    - name: Install commander
+      ansible.builtin.get_url:
+        url: 'https://github.com/commander-cli/commander/releases/download/v2.4.0/commander-linux-amd64'
+        dest: /usr/bin/commander
+        owner: root
+        group: root
+        mode: '0755'
+      tags:
+        - labs
+
+    - name: Install lab utility
+      ansible.builtin.copy:
+        src: files/lab
+        dest: /usr/bin/lab
+        owner: root
+        group: root
+        mode: '0755'
+      tags:
+        - labs
+
+    - name: Install suspicious app
+      ansible.builtin.copy:
+        src: files/sus.py
+        dest: /usr/local/bin/sus
+        owner: root
+        group: root
+        mode: '0755'
+      tags:
+        - labs
+
+
+- name: Prepare controller node
+  hosts: controller
+  become: true
+  vars:
+    firewalld_default_zone: public
+    firewalld_services:
+      - ssh
+      - https
+
+  pre_tasks:
+    - name: Load credentials
+      ansible.builtin.include_vars: credentials.yml
+
+    - name: Configure firewall
+      ansible.posix.firewalld:
+        zone: "{{ firewalld_default_zone }}"
+        service: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop: "{{ firewalld_services }}"
+
+  tasks:
+    - name: Install requirements
+      ansible.builtin.yum:
+        name:
+          - git
+          - python3-pynacl
+          - python3-devel
+          - python3-pip
+          - python3-requests
+          - python3-docker
+
+    - name: Install InSpec
+      ansible.builtin.yum:
+        name: https://packages.chef.io/files/stable/inspec/5.22.40/el/8/inspec-5.22.40-1.el8.x86_64.rpm
+        disable_gpg_check: true
+
+    - name: Install docker-compose
+      ansible.builtin.get_url:
+        url: https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        owner: root
+        group: root
+        mode: '0755'
+      tags: labs
+
+    - name: Copy OpenVAS docker-compose
+      ansible.builtin.template:
+        src: "templates/docker-compose.yml.j2"
+        dest: /root/docker-compose.yml
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Start OpenVAS
+      ansible.builtin.command: docker-compose up -d
+      changed_when: false
+      args:
+        chdir: /root
+
+  roles:
+    - name: geerlingguy.docker
+
+
+- name: Prepare node1
+  hosts: node1
+  become: true
+
+  tasks:
+    - name: Install SELinux utilities
+      ansible.builtin.dnf:
+        name:
+          - python3-policycoreutils
+          - policycoreutils-devel
+          - selinux-policy-doc
+
+  post_tasks:
+    - name: Deploy web app
+      ansible.builtin.copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: "{{ item.owner | default('root') }}"
+        group: "{{ item.group | default('root') }}"
+        mode: "{{ item.mode | default('0644') }}"
+      loop:
+        - src: files/app.php
+          dest: /var/www/html/app.php
+        - src: files/crying_cat.jpg
+          dest: /var/www/html/crying_cat.jpg
+        - src: files/happy_cat.jpg
+          dest: /var/www/html/happy_cat.jpg
+
+    - name: Configure firewall
+      block:
+        - name: Enable http
+          ansible.posix.firewalld:
+            service: http
+            permanent: true
+            state: enabled
+        - name: Enable 1337/tcp
+          ansible.posix.firewalld:
+            port: 1337/tcp
+            permanent: true
+            state: enabled
+
+    - name: Install additional applications
+      ansible.builtin.yum:
+        name:
+          - nmap
+
+    - name: Install application without repository
+      ansible.builtin.yum:
+        name:
+          - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/CentOS_8/x86_64/libt3config0-1.0.0-6.1.x86_64.rpm
+          - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/CentOS_8/x86_64/libt3highlight2-0.5.0-1.37.x86_64.rpm
+          - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/CentOS_8/x86_64/libt3highlight-utils-0.5.0-1.37.x86_64.rpm
+          - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/CentOS_8/x86_64/libt3widget2-1.2.2-1.4.x86_64.rpm
+          - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/CentOS_8/x86_64/libt3window0-0.4.1-1.1.x86_64.rpm
+          - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/CentOS_8/x86_64/libtranscript1-0.3.3-2.37.x86_64.rpm
+          - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/CentOS_8/x86_64/libt3key-utils-0.2.10-4.2.x86_64.rpm
+          - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/CentOS_8/x86_64/libt3key1-0.2.10-4.2.x86_64.rpm
+          - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/CentOS_8/x86_64/tilde-1.1.3-1.5.x86_64.rpm
+        disable_gpg_check: true
+
+    - name: Stage insecure files
+      ansible.builtin.copy:
+        content: "{{ item.content }}"
+        dest: "{{ item.path }}"
+        owner: "{{ item.owner | default('root') }}"
+        group: "{{ item.group | default('root') }}"
+        mode: "{{ item.mode | default('0644') }}"
+      loop:
+        - path: '/var/www/html/web-passwords'
+          content: 'sgiertz:fakuchad'
+          owner: 'root'
+          group: 'root'
+          mode: '0777'
+        - path: '/usr/bin/notarootshell'
+          content: "echo 'This could have been a binary for gaining root access. Luckily, this is just a training.'"
+          owner: 'root'
+          group: 'root'
+          mode: '4775'
+        - path: '/var/www/html/database_dispatcher.php'
+          content: 'This could have been a script that retrieves commands via HTTP GET and execute them as the webserver user. Luckily, this is just a training.'
+          owner: 'root'
+          group: 'apache'
+          mode: '2775'
+
+
+  roles:
+    - name: geerlingguy.apache
+    - name: geerlingguy.php
+
+
+- name: Prepare node2
+  hosts: node2
+  become: true
+  tasks:
+    - name: Install packages
+      ansible.builtin.apt:
+        name:
+          - apparmor
+          - apparmor-profiles
+          - apparmor-profiles-extra
+          - apparmor-utils
+
+    - name: Install application without repository
+      ansible.builtin.apt:
+        deb: "{{ item }}"
+      loop:
+        - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/xUbuntu_20.04/amd64/libt3config0_1.0.0-2_amd64.deb
+        - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/xUbuntu_20.04/amd64/libt3highlight2_0.5.0-1_amd64.deb
+        - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/xUbuntu_20.04/amd64/libt3key-bin_0.2.10-1_amd64.deb
+        - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/xUbuntu_20.04/amd64/libt3key1_0.2.10-1_amd64.deb
+        - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/xUbuntu_20.04/amd64/libt3widget2_1.2.2-1_amd64.deb
+        - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/xUbuntu_20.04/amd64/libt3window0_0.4.1-1_amd64.deb
+        - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/xUbuntu_20.04/amd64/libtranscript1_0.3.3-1_amd64.deb
+        - https://download.opensuse.org/repositories/home:/gphalkes:/tilde/xUbuntu_20.04/amd64/tilde_1.1.3-1_amd64.deb

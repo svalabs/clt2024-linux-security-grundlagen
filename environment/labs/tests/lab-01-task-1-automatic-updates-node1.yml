@@ -1,0 +1,38 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_extension_installed:
+    command: rpm -qa
+    stdout:
+      contains:
+        - 'dnf-automatic'
+    exit-code: 0
+
+  check_configuration_file:
+    command: cat /etc/dnf/automatic.conf
+    stdout:
+      contains:
+        - 'upgrade_type = security'
+        - 'download_updates = yes'
+        - 'apply_updates = yes'
+    exit-code: 0
+
+  check_timer:
+    command: systemctl status dnf-automatic.timer
+    stdout:
+      contains:
+        - 'loaded'
+        - 'active'
+        - 'enabled;'
+    exit-code: 0

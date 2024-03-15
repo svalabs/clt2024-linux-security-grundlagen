@@ -1,0 +1,8 @@
+- name: Harden servers
+  hosts: node1
+  become: true
+  roles:
+    - name: devsec.hardening.os_hardening
+      sysctl_overwrite:
+        # Enable IPv4 forwarding (needed for containers)
+        net.ipv4.ip_forward: 1

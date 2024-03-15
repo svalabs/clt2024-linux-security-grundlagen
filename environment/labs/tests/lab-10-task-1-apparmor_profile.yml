@@ -1,0 +1,29 @@
+---
+nodes:
+  node2:
+    type: ssh
+    addr: node2:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node2
+
+tests:
+  check_apparmor_profile:
+    command: cat /etc/apparmor.d/usr.local.bin.sus
+    stdout:
+      contains:
+        - '/usr/local/bin/sus r'
+        - '/etc/ld.so.cache r'
+        - '/run/crond.pid r'
+    exit-code: 0
+
+  check_apparmor_profile_loaded:
+    command: aa-status
+    stdout:
+      contains:
+        - '/usr/local/bin/sus'
+    exit-code: 0

@@ -1,0 +1,28 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_jail_state:
+    command: fail2ban-client status
+    stdout:
+      contains:
+        - sshd
+    exit-code: 0
+
+  check_jail_banned_ip:
+    command: cat /var/log/fail2ban.log
+    stdout:
+      contains:
+        - '[sshd] Ban'
+        - '[sshd] Unban'
+    exit-code: 0

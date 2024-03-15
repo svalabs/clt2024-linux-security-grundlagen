@@ -1,0 +1,11 @@
+---
+config:
+  env:
+    CHEF_LICENSE: accept-no-persist
+
+tests:
+  check_inspec_profile:
+    command: diff ~/mycompany-baseline/controls/mycompany_spec.rb /labs/15/mycompany-baseline/controls/mycompany_spec.rb
+    stdout:
+      exactly: ''
+    exit-code: 0

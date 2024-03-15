@@ -1,0 +1,20 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: user
+    pass: 'SVA2024-SCgLKzeyj9v4maXsxqJuWD'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_website:
+    command: curl http://localhost/app.php
+    stdout:
+      contains:
+        - 'External access possible'
+    exit-code: 0

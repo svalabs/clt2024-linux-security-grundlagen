@@ -1,0 +1,41 @@
+---
+nodes:
+  node1:
+    type: ssh
+    addr: node1:22
+    # identity-file: /root/.ssh/id_rsa.pub
+    user: root
+    pass: 'SVA2024-sHv9jUtAJR5hTgfdZwKa8S'
+
+config:
+  nodes:
+    - node1
+
+tests:
+  check_selinux_state:
+    command: getenforce
+    stdout:
+      contains:
+        - Enforcing
+    exit-code: 0
+
+  check_context_data:
+    command: ls -Zd1 /data
+    stdout:
+      contains:
+        - httpd_sys_content_t
+    exit-code: 0
+
+  check_context_index:
+    command: ls -Zd1 /data/index.html
+    stdout:
+      contains:
+        - httpd_sys_content_t
+    exit-code: 0
+
+  check_website:
+    command: restorecon -Rv /data ; curl http://localhost
+    stdout:
+      contains:
+        - Hello World
+    exit-code: 0
