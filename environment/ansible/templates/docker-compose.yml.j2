@@ -1,7 +1,7 @@
 version: "3"
 services:
   openvas:
-    image: 'immauss/openvas:21.04.09'
+    image: 'immauss/openvas:22.4.41'
     restart: always
     ports:
       - "443:9392"
@@ -15,7 +15,7 @@ services:
       - "RESTORE=false"
       - "DEBUG=false"
       - "HTTPS=true"
-      - "GMP=false"
+      - "GMP=9390"
     volumes:
       - "./data:/data:z"
     container_name: openvas

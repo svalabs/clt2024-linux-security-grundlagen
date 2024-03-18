@@ -44,6 +44,7 @@
           - htop
           - fail2ban
           - nano
+          - python3-passlib
 
     - name: Install some unneeded applications
       ansible.builtin.package:
@@ -192,7 +193,7 @@
     - name: Install docker-compose
       ansible.builtin.get_url:
         url: https://github.com/docker/compose/releases/download/v2.24.7/docker-compose-linux-x86_64
-        dest: /usr/local/bin/docker-compose
+        dest: /usr/bin/docker-compose
         owner: root
         group: root
         mode: '0755'

@@ -63,3 +63,5 @@ $ py.test ../ansible/test_controller.py --sudo --ssh-config=.vagrant/ssh-config 
 $ py.test ../ansible/test_node1.py --sudo --ssh-config=.vagrant/ssh-config --hosts=node1
 $ py.test ../ansible/test_node2.py --sudo --ssh-config=.vagrant/ssh-config --hosts=node2
 ```
+
+**Note**: It can take up to an hour for OpenVAS to download security definitions.

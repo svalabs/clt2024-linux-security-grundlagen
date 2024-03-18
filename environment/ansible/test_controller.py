@@ -39,9 +39,19 @@ def test_binaries(host):
     Check additional binaries
     """
     binaries = [
-        '/usr/local/bin/docker-compose'
+        '/usr/bin/docker-compose'
     ]
     for _bin in binaries:
         _file = host.file(_bin)
         assert _file.exists
         assert _file.mode == 0o755
+
+
+def test_openvas_sync(host):
+    """
+    Ensure that OpenVAS content has been downloaded
+    """
+    _database = host.run('du -s /root/data|cut -f1')
+    # yes, we need to use run for this
+    # as file doesn't support directories :')
+    assert int(_database.stdout) >= 3145728
